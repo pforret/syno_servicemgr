@@ -1,7 +1,8 @@
 #!/bin/bash
 ##
 # author : Peter Forret <peter@forret.com>
-# inspired by http://forum.synology.com/enu/viewtopic.php?f=37&t=30242
+# inspired by https://forum.synology.com/enu/viewtopic.php?f=37&t=30242
+# inspired by https://forum.synology.com/enu/viewtopic.php?t=106461
 ##
 prog=$(basename $0)
 option=$1
@@ -76,7 +77,7 @@ show_status(){
 }
 
 case "$option" in
-        start)
+	start)
 		is_running=0
 		if [[ -n "$svc_lockfile" ]] ; then
 			[[ -f "$svc_lockfile" ]] && is_running=1
@@ -99,13 +100,11 @@ case "$option" in
 			sleep 2
 			show_status
 		fi
+	;;
 
-
-        ;;
-
-        stop)
+	stop)
 		echo "$prog: stopping [$svc_name] ..."
-        [[ -n "$svc_stop_cmd" ]] && $svc_stop_cmd # if graceful shutdown with a command line
+		[[ -n "$svc_stop_cmd" ]] && $svc_stop_cmd # if graceful shutdown with a command line
 		pid=$(pidof $svc_name)
 		if [[ -n "$pid" ]] ; then
 			echo "$prog: killing process $pid ..."
@@ -114,13 +113,23 @@ case "$option" in
 		if [[ -n "$svc_lockfile" ]] ; then
 			rm -f $svc_lockfile
 		fi
-        ;;
+	;;
 
-        status)
+	install)
+		newname=run_$svc_name.sh
+		echo "$prog: will install as $newname ..."
+		cp $0 /usr/local/etc/rc.d/$newname
+		echo "script is added to /usr/local/etc/rc.d/"
+	;;
+
+	status)
 			show_status
         ;;
 
-        *)
+	*)
+		if [[ -n "$option" ]] ; then
+			echo "Unknown option [$option]"
+		fi
 cat <<EOF
 ### $prog $version for service [$svc_name]
 ------
