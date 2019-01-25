@@ -8,7 +8,7 @@ prog=$(basename $0)
 option=$1
 ### only change below
 ##################################################
-version=1.1
+version=1.2
 svc_path=iperf3
 svc_name=$(basename "$svc_path")
 #only change next one if the service is not clear from the binary name
@@ -18,14 +18,13 @@ svc_port=5201
 #use if you want program to use a lock file
 svc_lockfile=/var/lock/$svc_name.lock
 #use if you want program to use a log file
-svc_logfile=/var/log/$svc_name.log
-
+#svc_logfile=/var/log/$svc_name.log
 
 svc_start_cmd="$svc_path -s -D"
 svc_stop_cmd=""
 
 # by default, script runs as root. Use run_as to set other user (e.g. admin)
-#runas=admin
+#run_as=admin
 ##################################################
 ### only change above
 if [[ $UID -ne 0 ]] ; then
@@ -34,8 +33,10 @@ if [[ $UID -ne 0 ]] ; then
 	exit 1
 fi 
 execute="bash -c"
-[[ -n "$runas" ]] && execute="su - admin -c "
-#set -ex
+if [[ -n "$run_as" ]] ; then
+	[[ -n "$svc_start_cmd" ]] && svc_start_cmd="su - $run_as -c \"$svc_start_cmd\""
+	[[ -n "$svc_stop_cmd" ]] && svc_stop_cmd="su - $run_as -c \"$svc_stop_cmd\""
+fi
 
 check_port(){
 	[[ -n $(netstat -l -n | grep tcp | grep $svc_port) ]]
@@ -53,23 +54,23 @@ show_status(){
 	if [[ -n "$svc_path" ]] ; then
 		pid=$(pidof $svc_name)
 		if check_proc ; then
-			echo "$svc_prettyname: is running as process $pid"
+			echo "[V] is running as process $pid"
 		else
-			echo "$svc_prettyname: has NO running process"
+			echo "[X] has NO running process"
 		fi
 	fi
 	if [[ -n "$svc_port" ]] ; then
 		if check_port ; then
-			echo "$svc_prettyname: is running on port $svc_port"
+			echo "[V] is running on port $svc_port"
 		else
-			echo "$svc_prettyname: has NO listening port"
+			echo "[X] has NO listening port"
 		fi
 	fi
 	if [[ -n "$svc_lockfile" ]] ; then
 		if [[ -f "$svc_lockfile" ]] ; then
-			echo "$svc_prettyname: has lockfile $svc_lockfile"
+			echo "[V] has lockfile $svc_lockfile"
 		else
-			echo "$svc_prettyname: has NO lockfile"
+			echo "[X] has NO lockfile"
 		fi
 	fi
 
@@ -94,7 +95,11 @@ case "$option" in
 			echo "$prog: starting [$svc_name] ..."
 			[[ -n "$svc_start_cmd" ]] && $svc_start_cmd
 			if [[ -n "$svc_lockfile" ]] ; then
-				echo "Started at $(date) by $(whoami)" > $svc_lockfile
+				echo "Date:	$(date)" > $svc_lockfile
+				echo "Uptime: $(uptime)" >> $svc_lockfile
+				echo "User: $(whoami)" >> $svc_lockfile
+				echo "Script: $(realpath $0)" >> $svc_lockfile
+				echo "Command: $svc_start_cmd" >> $svc_lockfile
 			fi
 			sleep 2
 			show_status
@@ -115,7 +120,7 @@ case "$option" in
 	;;
 
 	install)
-		newname=run_$svc_name.sh
+		newname=S99$svc_name.sh
 		echo "$prog: will install as $newname ..."
 		cp $0 /usr/local/etc/rc.d/$newname
 		echo "script is added to /usr/local/etc/rc.d/"
