@@ -51,24 +51,25 @@ check_lock(){
 
 show_status(){
 	if [[ -n "$svc_path" ]] ; then
+		pid=$(pidof $svc_name)
 		if check_proc ; then
 			echo "$svc_prettyname: is running as process $pid"
 		else
-			echo "$svc_prettyname: is NOT running now"
+			echo "$svc_prettyname: has NO running process"
 		fi
 	fi
 	if [[ -n "$svc_port" ]] ; then
 		if check_port ; then
 			echo "$svc_prettyname: is running on port $svc_port"
 		else
-			echo "$svc_prettyname: is NOT running on port $svc_port"
+			echo "$svc_prettyname: has NO listening port"
 		fi
 	fi
 	if [[ -n "$svc_lockfile" ]] ; then
 		if [[ -f "$svc_lockfile" ]] ; then
 			echo "$svc_prettyname: has lockfile $svc_lockfile"
 		else
-			echo "$svc_prettyname: has no lockfile"
+			echo "$svc_prettyname: has NO lockfile"
 		fi
 	fi
 
