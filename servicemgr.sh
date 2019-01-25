@@ -38,7 +38,7 @@ execute="bash -c"
 #set -ex
 
 check_port(){
-	[[ -n $(netstat -l -p | grep $svc_port | cut -d/ -f2-) ]]
+	[[ -n $(netstat -l -n | grep tcp | grep $svc_port) ]]
 }
 
 check_proc(){
@@ -51,16 +51,14 @@ check_lock(){
 
 show_status(){
 	if [[ -n "$svc_path" ]] ; then
-		pid=$(pidof $svc_name)
-		if [[ -n "$pid" ]] ; then
+		if check_proc ; then
 			echo "$svc_prettyname: is running as process $pid"
 		else
 			echo "$svc_prettyname: is NOT running now"
 		fi
 	fi
 	if [[ -n "$svc_port" ]] ; then
-		portopen=$(netstat -l -p | grep $svc_port)
-		if [[ -n "$portopen" ]] ; then
+		if check_port ; then
 			echo "$svc_prettyname: is running on port $svc_port"
 		else
 			echo "$svc_prettyname: is NOT running on port $svc_port"
